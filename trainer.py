@@ -114,3 +114,28 @@ def new_conv_layer(input,              # The previous layer
     # We return both the resulting layer and the filter-weights
     # because we will plot the weights later.
     return layer, weights
+
+
+def flatten_layer(layer):
+    # Get the shape of the input layer.
+    layer_shape = layer.get_shape()
+
+    # The shape of the input layer is assumed to be:
+    # layer_shape == [num_images, img_height, img_width, num_channels]
+
+    # The number of features is: img_height * img_width * num_channels
+    # We can use a function from TensorFlow to calculate this.
+    num_features = layer_shape[1:4].num_elements()
+
+    # Reshape the layer to [num_images, num_features].
+    # Note that we just set the size of the second dimension
+    # to num_features and the size of the first dimension to -1
+    # which means the size in that dimension is calculated
+    # so the total size of the tensor is unchanged from the reshaping.
+    layer_flat = tf.reshape(layer, [-1, num_features])
+
+    # The shape of the flattened layer is now:
+    # [num_images, img_height * img_width * num_channels]
+
+    # Return both the flattened layer and the number of features.
+    return layer_flat, num_features
