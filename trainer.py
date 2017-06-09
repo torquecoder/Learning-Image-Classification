@@ -45,4 +45,10 @@ early_stopping = None  # use None if you don't want to implement early stoping
 train_path = 'training_data'
 test_path = 'testing_data'
 
-data = data_helper.read_train_sets(train_path, img_size, classes, validation_size = validation_size)
+data = data_helper.read_training_sets(train_path, img_size, classes, validation_size = validation_size)
+test_images, test_ids = data_helper.read_testing_set(test_path, img_size, classes)
+
+print("Size of:")
+print("- Training-set:\t\t{}".format(len(data.train.labels)))
+print("- Test-set:\t\t{}".format(len(test_images)))
+print("- Validation-set:\t{}".format(len(data.valid.labels)))
