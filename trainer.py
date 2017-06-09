@@ -52,3 +52,10 @@ print("Size of:")
 print("- Training-set:\t\t{}".format(len(data.train.labels)))
 print("- Test-set:\t\t{}".format(len(test_images)))
 print("- Validation-set:\t{}".format(len(data.valid.labels)))
+
+
+def new_weights(shape):
+    return tf.Variable(tf.truncated_normal(shape, stddev = 0.05)) # Standard Deviation = 0.05
+
+def new_biases(length):
+    return tf.Variable(tf.constant(0.05, shape=[length]))
