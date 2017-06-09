@@ -139,3 +139,29 @@ def flatten_layer(layer):
 
     # Return both the flattened layer and the number of features.
     return layer_flat, num_features
+
+def new_fc_layer(input,             # The previous layer
+                 num_inputs,        # Number of inputs from previous layer
+                 num_outputs,       # Number of outputs
+                 use_relu = True):  # Use Rectified Linear Unit (ReLU)?
+
+    # Create new weights and biases.
+    weights = new_weights(shape = [num_inputs, num_outputs])
+    biases = new_biases(length = num_outputs)
+
+    # Calculate the layer as the matrix multiplication of
+    # the input and weights, and then add the bias-values.
+    layer = tf.matmul(input, weights) + biases
+
+    # Use ReLU?
+    if use_relu:
+        layer = tf.nn.relu(layer)
+
+    return layer
+
+session = tf.Session()
+x = tf.placeholder(tf.float32, shape=[None, img_size_flat], name='x')
+x_image = tf.reshape(x, [-1, img_size, img_size, num_channels])
+
+y_true = tf.placeholder(tf.float32, shape=[None, num_classes], name='y_true')
+y_true_cls = tf.argmax(y_true, dimension=1)
