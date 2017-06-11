@@ -97,7 +97,7 @@ def new_conv_layer(input,              # The previous layer
         # This is 2x2 max-pooling, which means that we
         # consider 2x2 windows and select the largest value
         # in each window. Then we move 2 pixels to the next window.
-        layer = tf.nn.max_pool(value=layer,
+        layer = tf.nn.max_pool(value = layer,
                                ksize = [1, 2, 2, 1],       # Size of max-pooling window (2x2)
                                strides = [1, 2, 2, 1],     # stride on a single image (2x2)
                                padding = 'SAME')
@@ -160,8 +160,31 @@ def new_fc_layer(input,             # The previous layer
     return layer
 
 session = tf.Session()
-x = tf.placeholder(tf.float32, shape=[None, img_size_flat], name='x')
+
+x = tf.placeholder(tf.float32, shape = [None, img_size_flat], name = 'x')
 x_image = tf.reshape(x, [-1, img_size, img_size, num_channels])
 
-y_true = tf.placeholder(tf.float32, shape=[None, num_classes], name='y_true')
-y_true_cls = tf.argmax(y_true, dimension=1)
+y_true = tf.placeholder(tf.float32, shape = [None, num_classes], name = 'y_true')
+y_true_cls = tf.argmax(y_true, dimension = 1) # Returns the index with the largest value across axis of a tensor
+
+
+layer_conv1, weights_conv1 = \
+new_conv_layer(input = x_image,
+               num_input_channels = num_channels,
+               filter_size = filter_size1,
+               num_filters = num_filters1,
+               use_pooling = True)
+
+layer_conv2, weights_conv2 = \
+new_conv_layer(input = layer_conv1,
+               num_input_channels = num_filters1,
+               filter_size = filter_size2,
+               num_filters = num_filters2,
+               use_pooling = True)
+
+layer_conv3, weights_conv3 = \
+new_conv_layer(input = layer_conv2,
+               num_input_channels = num_filters2,
+               filter_size = filter_size3,
+               num_filters = num_filters3,
+               use_pooling = True)
