@@ -188,3 +188,16 @@ new_conv_layer(input = layer_conv2,
                filter_size = filter_size3,
                num_filters = num_filters3,
                use_pooling = True)
+
+layer_flat, num_features = flatten_layer(layer_conv3)
+
+layer_fc1 = new_fc_layer(input = layer_flat,
+                         num_inputs = num_features,
+                         num_outputs = fc_size,
+                         use_relu = True)
+
+layer_fc2 = new_fc_layer(input = layer_fc1,
+                         num_inputs = fc_size,
+                         num_outputs = num_classes,
+                         use_relu = False)
+                         
