@@ -1,4 +1,6 @@
 import tensorflow as tf
+import time
+from datetime import timedelta
 import data_helper
 
 # Convolutional layer 1
@@ -6,12 +8,12 @@ filter_size_1 = 3
 num_filters_1 = 32
 
 # Convolutional layer 2
-filter_size_1 = 3
-num_filters_1 = 32
+filter_size_2 = 3
+num_filters_2 = 32
 
 # Convolutional layer 3
-filter_size_1 = 3
-num_filters_1 = 64
+filter_size_3 = 3
+num_filters_3 = 64
 
 # Fully connected layer
 fc_size = 128   # Number of neurons in fully connected layer
@@ -171,22 +173,22 @@ y_true_cls = tf.argmax(y_true, dimension = 1) # Returns the index with the large
 layer_conv1, weights_conv1 = \
 new_conv_layer(input = x_image,
                num_input_channels = num_channels,
-               filter_size = filter_size1,
-               num_filters = num_filters1,
+               filter_size = filter_size_1,
+               num_filters = num_filters_1,
                use_pooling = True)
 
 layer_conv2, weights_conv2 = \
 new_conv_layer(input = layer_conv1,
-               num_input_channels = num_filters1,
-               filter_size = filter_size2,
-               num_filters = num_filters2,
+               num_input_channels = num_filters_1,
+               filter_size = filter_size_2,
+               num_filters = num_filters_2,
                use_pooling = True)
 
 layer_conv3, weights_conv3 = \
 new_conv_layer(input = layer_conv2,
-               num_input_channels = num_filters2,
-               filter_size = filter_size3,
-               num_filters = num_filters3,
+               num_input_channels = num_filters_2,
+               filter_size = filter_size_3,
+               num_filters = num_filters_3,
                use_pooling = True)
 
 layer_flat, num_features = flatten_layer(layer_conv3)
@@ -200,4 +202,98 @@ layer_fc2 = new_fc_layer(input = layer_fc1,
                          num_inputs = fc_size,
                          num_outputs = num_classes,
                          use_relu = False)
-                         
+
+y_pred = tf.nn.softmax(layer_fc2)
+y_pred_cls = tf.argmax(y_pred, dimension = 1)
+
+cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits = layer_fc2, labels = y_true)
+cost = tf.reduce_mean(cross_entropy)
+
+optimizer = tf.train.AdamOptimizer(learning_rate = 1e-4).minimize(cost)
+correct_prediction = tf.equal(y_pred_cls, y_true_cls)
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+session = tf.Session()
+session.run(tf.global_variables_initializer())
+
+train_batch_size = batch_size
+
+def print_progress(epoch, feed_dict_train, feed_dict_validate, val_loss):
+    # Calculate the accuracy on the training-set.
+    acc = session.run(accuracy, feed_dict = feed_dict_train)
+    val_acc = session.run(accuracy, feed_dict = feed_dict_validate)
+    msg = "Epoch {0} --- Training Accuracy: {1:>6.1%}, Validation Accuracy: {2:>6.1%}, Validation Loss: {3:.3f}"
+    print(msg.format(epoch + 1, acc, val_acc, val_loss))
+
+# Counter for total number of iterations performed so far.
+total_iterations = 0
+
+def optimize(num_iterations):
+    # Ensure we update the global variable rather than a local copy.
+    global total_iterations
+
+    # Start-time used for printing time-usage below.
+    start_time = time.time()
+
+    best_val_loss = float("inf")
+    patience = 0
+
+    for i in range(total_iterations,
+                   total_iterations + num_iterations):
+
+        # Get a batch of training examples.
+        # x_batch now holds a batch of images and
+        # y_true_batch are the true labels for those images.
+        x_batch, y_true_batch, _, cls_batch = data.train.next_batch(train_batch_size)
+        x_valid_batch, y_valid_batch, _, valid_cls_batch = data.valid.next_batch(train_batch_size)
+
+        # Convert shape from [num examples, rows, columns, depth]
+        # to [num examples, flattened image shape]
+
+        x_batch = x_batch.reshape(train_batch_size, img_size_flat)
+        x_valid_batch = x_valid_batch.reshape(train_batch_size, img_size_flat)
+
+        # Put the batch into a dict with the proper names
+        # for placeholder variables in the TensorFlow graph.
+        feed_dict_train = {x: x_batch,
+                           y_true: y_true_batch}
+
+        feed_dict_validate = {x: x_valid_batch,
+                              y_true: y_valid_batch}
+
+        # Run the optimizer using this batch of training data.
+        # TensorFlow assigns the variables in feed_dict_train
+        # to the placeholder variables and then runs the optimizer.
+        session.run(optimizer, feed_dict = feed_dict_train)
+
+
+        # Print status at end of each epoch (defined as full pass through training dataset).
+        if i % int(data.train.num_examples/batch_size) == 0:
+            val_loss = session.run(cost, feed_dict = feed_dict_validate)
+            epoch = int(i / int(data.train.num_examples / batch_size))
+
+            print_progress(epoch, feed_dict_train, feed_dict_validate, val_loss)
+
+            if early_stopping:
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience = 0
+                else:
+                    patience += 1
+
+                if patience == early_stopping:
+                    break
+
+    # Update the total number of iterations performed.
+    total_iterations += num_iterations
+
+    # Ending time.
+    end_time = time.time()
+
+    # Difference between start and end-times.
+    time_dif = end_time - start_time
+
+    # Print the time-usage.
+    print("Time elapsed: " + str(timedelta(seconds=int(round(time_dif)))))
+
+optimize(num_iterations = 3000)
